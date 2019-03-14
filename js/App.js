@@ -17,12 +17,26 @@ let tick = 0;
 let timeDelta = 0;
 let lastTimeDelta = 0;
 let camera = [0, 0, 0];
+// let controlPoints = [
+//     [-2, -5, -5],
+//     [-0, 0, -2.5],
+//     [1, 5, 4],
+//     [3, 0, 10]
+// ];
+
+let centerX = 0;
+let centerY = 0;
+let centerZ = 0;
+let upDX = 0;
+let upDY = 1;
+let upDZ = 0;
+
 let controlPoints = [
-    [-2, -5, -5],
-    [-0, 0, -2.5],
-    [1, 5, 4],
-    [3, 0, 10]
-];
+    [0.4, 0.4, 5],
+    [0.4, 0.4, 2.5],
+    [0.4, 0.4, 0],
+    [0.4, 0.4, -2.5]
+]
 
 function resetCamera() {
     camera[0] = 0;
@@ -50,6 +64,10 @@ function update(delta) {
         camera[1] += weights[i] * controlPoints[i][1];
         camera[2] += weights[i] * controlPoints[i][2];
     }
+
+    // centerX = camera[0];
+    // centerY = camera[1];
+    // centerZ = camera[2] - 1;
 }
 
 
@@ -76,8 +94,8 @@ function draw() {
 
     matrix.lookAt(lookAt,
         camera[0], camera[1], camera[2],
-        0, 0, 0,
-        0, 1, 0);
+        centerX, centerY, centerZ,
+        upDX, upDY, upDZ);
 
     let projection = matrix.createFrustum(-.01, .01, -.01, .01, .03, 1000);
     let xRotate = matrix.create();
