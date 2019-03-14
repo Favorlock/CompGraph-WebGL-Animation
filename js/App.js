@@ -4,6 +4,9 @@ let matrix = new Learn_webgl_matrix();
 
 let angle_x = 0;
 let angle_y = 0;
+let trans_x = 0;
+let trans_y = 0;
+let trans_z = 0;
 let timeMultiplier = 1;
 
 let vShaders = [];
@@ -59,7 +62,7 @@ function update(delta) {
     tick = tick % 100;
     let weights = weight(tick / 100);
 
-    resetCamera();
+    // resetCamera();
 
     // for (let i = 0; i < 4; i++) {
     //     camera[0] += weights[i] * controlPoints[i][0];
@@ -87,7 +90,11 @@ function loadScene() {
 
     gears.push(createGear(6,
         createTransform(1.875, -.875, .5, 90, 0, 0, 0.5, 0.5, 0.5),
-        [0, 0, -.45]));
+        [0, 0, -.45225]));
+
+    gears.push(createGear(11,
+        createTransform(-.9, .1, -1.2, 0, 90, 0, 1.25, 1.25, 1.25),
+        [0, 0, .225]));
 }
 
 function createIdentityMatrix() {
@@ -273,11 +280,29 @@ function init() {
             case "ArrowDown":
                 angle_x += 3;
                 break;
+            case "a":
+                camera[0] -= .2;
+                break;
+            case "w":
+                camera[1] += .2
+                break;
+            case "d":
+                camera[0] += .2;
+                break;
+            case "s":
+                camera[1] -= .2;
+                break;
+            case "PageUp":
+                camera[2] -= .2;
+                break;
+            case "PageDown":
+                camera[2] += .2;
+                break;
             case "=":
-                timeMultiplier = Math.min(4, timeMultiplier + 0.2)
+                timeMultiplier = Math.min(4, timeMultiplier + 0.2);
                 break;
             case "-":
-                timeMultiplier = Math.max(-4, timeMultiplier - 0.2)
+                timeMultiplier = Math.max(-4, timeMultiplier - 0.2);
                 break;
             default:
                 break;
