@@ -49,7 +49,7 @@ let paths = {
             mode: 'look-forward',
             amount: 20
         },
-        ticks: Math.floor(100)
+        ticks: Math.floor(4 * 60)
     }
 }
 let currentPath;
@@ -111,8 +111,6 @@ function update(delta, ticks) {
             centerZ += weights2[i] * controlPoints[i][2];
         } else {
         }
-
-        console.log(camera)
     }
 
 

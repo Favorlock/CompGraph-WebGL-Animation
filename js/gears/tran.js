@@ -225,8 +225,6 @@ for (i = 0; i < spokeN; i++) {
 
                                colors.push(0.5,0.5,0.5,  0.5,0.5,0.5,  0.5,0.5,0.5)
                   
-                 console.log("First Z: " + z);
-
                  if (z > 0)
                       normals.push(0,0,1, 0,0,1, 0,0,1  );    
                  else
@@ -244,9 +242,6 @@ for (i = 0; i < spokeN; i++) {
                  else
                       normals.push(0,0,-1, 0,0,-1, 0,0,-1  );    
 
-                      console.log("Second Z: " + z);
-
-		    
 	         ang += teethAngInc;
         }
         z = -z;

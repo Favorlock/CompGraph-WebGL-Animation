@@ -237,12 +237,6 @@ function millerGear(numTeeth, numSpokes) {
 
    z = -z;
 
-   console.log("colors length before coin edge: " + colors.length);
-   console.log("normals length before coin edge: " + normals.length);
-   console.log("vertices length before coin edge: " + vertices.length);
-
-
-   
    ang = 0;                          // coin edge
    var drawTooth = true;
    for (i = 0; i < n; i++) {
@@ -274,10 +268,6 @@ function millerGear(numTeeth, numSpokes) {
 	    ang += angInc;
    }
 
-   console.log("colors length after coinedge: " + colors.length);
-   console.log("normals length after coinedge: " + normals.length);
-   console.log("vertices length after coinedge: " + vertices.length);
-
  ang = 0;
    drawTooth = false;     // tooth roof
    for (i = 0; i < numTeeth * 2; i++) {
@@ -289,7 +279,6 @@ function millerGear(numTeeth, numSpokes) {
             const outerY = outRad*Math.sin(ang);
 	      
         var norm = [outRad*Math.cos(ang+angInc/2),outRad*Math.sin(ang+angInc/2),0];
-        console.log("tooth roof normOnly" + norm);
 //         for(var j = 0; j < norm.length; j++){
 //         	norm[j] *= -1;
 //         }
@@ -299,7 +288,6 @@ function millerGear(numTeeth, numSpokes) {
 		const v3 = [outRad*Math.cos(ang+angInc),outRad*Math.sin(ang+angInc),z_Tooth_Wall];
 
 		const calculatedNormal = calcNormal(...v3, ...v2, ...v1);
-		console.log("calculated normOnly" + calculatedNormal);
 // 		norm = calculatedNormal;
 
 // 		for(var k = 0; k < norm.length; k++){
@@ -329,10 +317,6 @@ function millerGear(numTeeth, numSpokes) {
 	    ang += angInc;
    }
 
-      console.log("colors length before spokes: " + colors.length);
-   console.log("normals length before spokes: " + normals.length);
-   console.log("vertices length before spokes: " + vertices.length);
-
    //spokes
    //
 
@@ -343,8 +327,6 @@ function millerGear(numTeeth, numSpokes) {
 	const radius = rad / 5;
 	//radius must be greater than width
 	const thetaOffset = Math.asin( width / (2 * radius));
-	console.log("thetaOffset is: " + thetaOffset);
-	console.log("angIncSpoke is: " + angIncSpoke );
    // spoke walls
 
    var upper_spokes = [];
@@ -362,17 +344,8 @@ function millerGear(numTeeth, numSpokes) {
 
 			if(z > 0) {
 				upper_spokes.push(points);
-				console.log("upper_spokes is: " + upper_spokes);
-				console.log("i'th array upper_spokes" + upper_spokes[upper_spokes.length - 1]);
-				console.log("upper_spokes length is: " + upper_spokes.length);
 			} else {
 				lower_spokes.push(points);
-				console.log("lower_spokes length is: " + lower_spokes.length);
-			}
-
-			console.log(points);
-			for(var j = 0; j < 4; j++) {
-				console.log("point " + j +" is: " + points[j]);
 			}
 
 			if( z > 0){
@@ -389,10 +362,6 @@ function millerGear(numTeeth, numSpokes) {
    	
    }
 
-        console.log("colors length before spokes: " + colors.length);
-   console.log("normals length before spokes: " + normals.length);
-   console.log("vertices length before spokes: " + vertices.length);
-
 
 
 
@@ -408,8 +377,6 @@ function millerGear(numTeeth, numSpokes) {
    		left_rect_points.push(upper_points[3]);
    		left_rect_points.push(lower_points[3]);
    		left_rect_points.push(lower_points[0]);
-   		console.log("left_rect_points is: " + left_rect_points);
-   		console.log("left_rect_points at 0 is: " + left_rect_points[0]);
 
 
 		   		const right_rect_points = [];
@@ -436,10 +403,6 @@ function millerGear(numTeeth, numSpokes) {
    		pushRectangleVerticesManualy(right_rect_points, vertices, normals, colors, nTimesArray(4,colorPrimary), 1);
 
    }
-
-     console.log("colors length before spokes: " + colors.length);
-   console.log("normals length before spokes: " + normals.length);
-   console.log("vertices length before spokes: " + vertices.length);
 
 
 
@@ -505,9 +468,6 @@ function point(radius,theta, z){
 	const point = [];
 	const x = radius * Math.cos(theta);
 	const y = radius * Math.sin(theta);
-	console.log("theta is: " + theta);
-	console.log("radius is: " + radius);
-	console.log("z is: " + z);
 	point.push(x);
 	point.push(y);
 	point.push(z);
@@ -523,8 +483,7 @@ function pushTriVertices(p1, p2, p3, vertices, normals, colorBuffer, colors_per_
 
 	if(colors_per_vertex.length != 3 * 3){
 		alert("colors_per_vertex was not 3, INVALID STATE");
-		console.log("Colors per vertex was: " + colors_per_vertex);
-	} 
+	}
 	Array.prototype.push.apply(colorBuffer, colors_per_vertex)
 	
 
@@ -560,8 +519,7 @@ function pushTriVerticesManually(p1, p2, p3, vertices, normals, colorBuffer, col
 
 	if(colors_per_vertex.length != 3 * 3){
 		alert("colors_per_vertex was not 3, INVALID STATE");
-		console.log("Colors per vertex was: " + colors_per_vertex);
-	} 
+	}
 	Array.prototype.push.apply(colorBuffer, colors_per_vertex)
 	
 
@@ -569,15 +527,9 @@ function pushTriVerticesManually(p1, p2, p3, vertices, normals, colorBuffer, col
 								p2[0], p2[1], p2[2],
 								p3[0], p3[1], p3[2]
 							);
-							console.log("old normal is: " + normal);
-							console.log("source normal for points p1, p2, p3");
-							console.log("source normal p1 " + p1);
-							console.log("source normal p2 " + p2);
-							console.log("source normal p3 " + p3);
 // 	for(var i = 0; i < normal.length;i++){
 // 		normal[i] *= normal_scaler * -1;
 // 	}
-	console.log("new normal is: " + normal);
 	const triNorm = triNormCalc(normal);
 
 	Array.prototype.push.apply(normals, triNorm);
@@ -628,9 +580,6 @@ var maxDist = -1;
 var maxPointIndex = NaN;
 //find max distance from p_share_base
 for(var i = 1; i < 4; i++){
-	console.log("p_share_base is: " + p_share_base);
-	console.log("points is: " + points + "after removing p_share_base");
-	console.log("points[i] is: " + points[i] + "for i = " + i);
 	const dist_for_i = distance(p_share_base,points[i]);
 	if(dist_for_i > maxDist){
 		maxDist = dist_for_i;

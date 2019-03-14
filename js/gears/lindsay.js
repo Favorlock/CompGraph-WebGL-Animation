@@ -232,7 +232,6 @@ function evandlGear(numTeeth = 40, numSpokes = 4, spokeAng = 2 / numSpokes) {
                 rad * Math.cos(ang), rad * Math.sin(ang), z)
             colors.push(0.8314, 0.6863, 0.2157, 0.8314, 0.6863, 0.2157, 0.8314, 0.6863, 0.2157)
             normals.push(-norm[0], -norm[1], -norm[2], -norm[0], -norm[1], -norm[2], -norm[0], -norm[1], -norm[2])
-            console.log(`${norm[0]} ${norm[1]} ${norm[2]}`)
 
             v1 = vector.create(rad * Math.cos(ang + angInc), rad * Math.sin(ang + angInc), -z);
             v2 = vector.create(outRad * Math.cos(ang + angInc), outRad * Math.sin(ang + angInc), -z);
@@ -255,8 +254,6 @@ function evandlGear(numTeeth = 40, numSpokes = 4, spokeAng = 2 / numSpokes) {
                 rad * Math.cos(ang + angInc), rad * Math.sin(ang + angInc), z)
             colors.push(0.8314, 0.6863, 0.2157, 0.8314, 0.6863, 0.2157, 0.8314, 0.6863, 0.2157)
             normals.push(norm[0], norm[1], norm[2], norm[0], norm[1], norm[2], norm[0], norm[1], norm[2])
-            console.log(`${norm[0]} ${norm[1]} ${norm[2]}`)
-
         }
         ang += angInc;
     }
