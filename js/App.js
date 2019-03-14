@@ -30,29 +30,38 @@ let upDX = 0;
 let upDY = 1;
 let upDZ = 0;
 
-let controlPoints = [
-    [0.4, 0.4, 10],
-    [0.4, 0.4, -10],
-    [0.4, 0.4, -3],
-    [0.4, 1, -10]
-]
+let lookAhead = {
+    mode: 'look-forward',
+    amount: 1
+}
 
-let paths = {
-    1: {
+let paths = [
+    {
         controlPoints: [
-            [0.5, 0.4, 5],
-            [0.5, 0.4, 2],
-            [0.5, 0.4, 1],
-            [0.5, 0.4, 0]
+            [7, 0.4, 3],
+            [4, -0.1, 0],
+            [3, -0.1, -1.2],
+            [-2, -.6, -0.5]
+        ],
+        center: lookAhead,
+        ticks: 6 * 60
+    },
+    {
+        controlPoints: [
+            [1, 0.3, -1.1],
+            [.5, 0.5, -1.2],
+            [0, 0.8, -1.3],
+            [-.5, 1, -1.3]
         ],
         center: {
-            mode: 'look-forward',
-            amount: 20
+            mode: 'point',
+            point: [-10, 0.4, -1.1]
         },
-        ticks: Math.floor(4 * 60)
+        ticks: 4 * 60
     }
-}
-let currentPath;
+]
+let currentPath = 0;
+let currentTick = 0;
 let animationLength = 0;
 
 for (let prop in paths) {
@@ -77,7 +86,7 @@ function resetCenter() {
 }
 
 function weight(tick) {
-    let t = tick / 4;
+    let t = tick;
 
     return [
         Math.pow(1 - t, 3),
@@ -87,33 +96,51 @@ function weight(tick) {
     ]
 }
 
-function update(delta, ticks) {
-    let tick = engine.tickHandler.steps % animationLength;
+function getPointInBezierCurve() {
+    
+}
 
-    if (paths[tick]) {
-        currentPath = paths[tick];
+
+function update(delta, ticks) {
+    if (currentTick == paths[currentPath].ticks) {
+        if (paths.length - 1 > currentPath) {
+            currentPath += 1;
+        } else {
+            currentPath = 0;
+        }
+
+        currentTick = 0;
     }
 
-    let weights = weight(tick / currentPath.ticks);
-
     resetLookAt();
+
+    let path = paths[currentPath];
+    let weights = weight(currentTick / path.ticks);
+    let controlPoints = path.controlPoints;
 
     for (let i = 0; i < controlPoints.length; i++) {
         camera[0] += weights[i] * controlPoints[i][0];
         camera[1] += weights[i] * controlPoints[i][1];
         camera[2] += weights[i] * controlPoints[i][2];
 
-        if (currentPath.center.mode === 'look-forward') {
-            let weights2 = weight(Math.min(tick + 20, currentPath.ticks) / currentPath.ticks);
+        let center = path.center;
+
+        if (path.center.mode === 'look-forward') {
+            let weights2 = weight(Math.min(currentTick + path.center.amount, path.ticks) / path.ticks);
 
             centerX += weights2[i] * controlPoints[i][0];
             centerY += weights2[i] * controlPoints[i][1];
             centerZ += weights2[i] * controlPoints[i][2];
-        } else {
+        } else if (center.mode === 'point') {
+            let point = center.point;
+
+            centerX = point[0];
+            centerY = point[1];
+            centerZ = point[2];
         }
     }
 
-
+    currentTick += 1;
 }
 
 function loadScene() {
