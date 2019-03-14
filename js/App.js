@@ -96,10 +96,6 @@ function weight(tick) {
     ]
 }
 
-function getPointInBezierCurve() {
-    
-}
-
 
 function update(delta, ticks) {
     if (currentTick == paths[currentPath].ticks) {
@@ -140,7 +136,13 @@ function update(delta, ticks) {
         }
     }
 
-    currentTick += 1;
+    if (engine.tickHandler.steps % animationLength == 0) {
+        currentTick = 1;
+        currentPath = 0;
+        loadScene();
+    } else {
+        currentTick++;
+    }
 }
 
 function loadScene() {
