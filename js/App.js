@@ -58,11 +58,27 @@ let paths = [
             point: [0, 0.9, -1.2]
         },
         ticks: 7 * 60
+    },
+    {
+        mode: 'radial',
+        center: {
+            point: [1.875, -.6, .5],
+            camera: [1.875, -.8, .5],
+            start: 20,
+            arc: 90,
+            radius: .9,
+            xRotate: 0,
+            yRotate: 0,
+            zRotate: 0
+        },
+        ticks: 6 * 60
     }
 ]
 let currentPath = 0;
 let currentTick = 0;
 let animationLength = 0;
+
+let lookAtModifier;
 
 for (let prop in paths) {
     animationLength += paths[prop].ticks;
@@ -111,28 +127,52 @@ function update(delta, ticks) {
     resetLookAt();
 
     let path = paths[currentPath];
-    let weights = weight(currentTick / path.ticks);
-    let controlPoints = path.controlPoints;
 
-    for (let i = 0; i < controlPoints.length; i++) {
-        camera[0] += weights[i] * controlPoints[i][0];
-        camera[1] += weights[i] * controlPoints[i][1];
-        camera[2] += weights[i] * controlPoints[i][2];
-
-        let center = path.center;
-
-        if (path.center.mode === 'look-forward') {
-            let weights2 = weight(Math.min(currentTick + path.center.amount, path.ticks) / path.ticks);
-
-            centerX += weights2[i] * controlPoints[i][0];
-            centerY += weights2[i] * controlPoints[i][1];
-            centerZ += weights2[i] * controlPoints[i][2];
-        } else if (center.mode === 'point') {
+    if (path.mode) {
+        if (path.mode === 'radial') {
+            let center = path.center;
             let point = center.point;
+
+            let slice = center.arc / path.ticks;
+            let arc = slice * currentTick + center.start;
+
+            let rads = matrix.toRadians(arc);
+
+            let x = Math.cos(rads) * center.radius;
+            let z = Math.sin(rads) * center.radius;
 
             centerX = point[0];
             centerY = point[1];
             centerZ = point[2];
+
+            camera[0] = center.camera[0] + x;
+            camera[1] = center.camera[1];
+            camera[2] = center.camera[2] + z;
+        }
+    } else {
+        let weights = weight(currentTick / path.ticks);
+        let controlPoints = path.controlPoints;
+
+        for (let i = 0; i < controlPoints.length; i++) {
+            camera[0] += weights[i] * controlPoints[i][0];
+            camera[1] += weights[i] * controlPoints[i][1];
+            camera[2] += weights[i] * controlPoints[i][2];
+
+            let center = path.center;
+
+            if (path.center.mode === 'look-forward') {
+                let weights2 = weight(Math.min(currentTick + path.center.amount, path.ticks) / path.ticks);
+
+                centerX += weights2[i] * controlPoints[i][0];
+                centerY += weights2[i] * controlPoints[i][1];
+                centerZ += weights2[i] * controlPoints[i][2];
+            } else if (center.mode === 'point') {
+                let point = center.point;
+
+                centerX = point[0];
+                centerY = point[1];
+                centerZ = point[2];
+            }
         }
     }
 
@@ -275,6 +315,11 @@ function draw() {
         camera[0], camera[1], camera[2],
         centerX, centerY, centerZ,
         upDX, upDY, upDZ);
+
+    if (lookAtModifier) {
+        matrix.multiply(lookAt, lookAt, lookAtModifier);
+        lookAtModifier = null;
+    }
 
     let projection = matrix.createFrustum(-.01, .01, -.01, .01, .03, 1000);
     let xRotate = matrix.create();
@@ -724,4 +769,4 @@ window.onload = function () {
     loadScene();
 
     engine.start();
-};
+}
