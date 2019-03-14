@@ -278,7 +278,7 @@ function jenzelVillanuevaGear(numTeeth, numSpokes) {
             // increment angle
             ang += angIncS;
         }
-        // reverse z to render opposite side
+        // reverse z to draw opposite side
         z = -z;
     }
     z = -z;

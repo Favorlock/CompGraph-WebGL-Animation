@@ -8,7 +8,7 @@
 //  and possibly colors and normals for each vertex
 /**
  * The gear is customizable for quantity of teeth, quantity of spokes, and width of the gear.
- * Gear scale can be adjusted in gear.js on line# 320.
+ * Gear scale can be adjusted in App.js on line# 320.
  * @param {*} quantityTeeth  3 < n < 140
  * @param {*} quantitySpokes 2 < n < 20
  * @param {*} width 0.02 < n < 1

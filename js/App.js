@@ -10,14 +10,19 @@ let fShaders = [];
 let shaderProgram;
 let programInfo;
 
-let buffers;
+let buffers = [];
 
 let initialized = false;
+let timeDelta = 0;
+let lastTimeDelta = 0;
 
 //
 // Draw the scene.
 //
-function drawScene() {
+function draw() {
+    webglUtils.resizeCanvasToDisplaySize(canvas);
+
+    gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
     gl.clearColor(1.0, 1.0, 1.0, 1.0);  // Clear to white, fully opaque
     gl.clearDepth(1.0);                 // Clear everything
     gl.enable(gl.DEPTH_TEST);           // Enable depth testing
@@ -114,7 +119,7 @@ function init() {
     };
 
     // add an event handler so we can interactively rotate the model
-    document.addEventListener('keydown', function (event) {
+    document.addEventListener('keydown', function (evenast) {
         if (event.keyCode == 37) {   //left
             angle_y -= 3;
         } else if (event.keyCode == 38) {  //top
@@ -139,31 +144,32 @@ function init() {
                 gear_id = 28;
 
             console.log('Gear ID = ', gear_id);
-            setupScene();
-            render();
+            loadScene();
         }
 
-        drawScene(gl, programInfo, buffers, angle_x, angle_y);
-        return false;
+        draw();
     });
 
     initialized = true;
 }
 
-function render() {
-    webglUtils.resizeCanvasToDisplaySize(canvas);
-
-    gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
-
-    // Draw the scene
-    drawScene();
-}
-
-function setupScene() {
+function loadScene() {
     // build the object(s) we'll be drawing, put the data in buffers
     buffers = initBuffers(gl, programInfo, gear_id);
 
     enableAttributes();
+}
+
+function update(delta) {
+    let inc = 90 * delta;
+    angle_y = (angle_y + inc) % 360;
+}
+
+function loop() {
+    let delta = (timeDelta - lastTimeDelta) / 1000;
+
+    update(delta);
+    draw();
 }
 
 function main() {
@@ -171,9 +177,14 @@ function main() {
 
     if (!initialized) return;
 
-    setupScene();
+    loadScene();
 
-    render();
+    window.requestAnimationFrame(function callback(time) {
+        timeDelta = time;
+        loop();
+        window.requestAnimationFrame(callback);
+        lastTimeDelta = timeDelta;
+    });
 }
 
 //
