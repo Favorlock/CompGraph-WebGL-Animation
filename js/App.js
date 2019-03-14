@@ -4,7 +4,7 @@ let matrix = new Learn_webgl_matrix();
 
 let angle_x = 0;
 let angle_y = 0;
-let gear_id = 0;
+let timeMultiplier = 1;
 
 let vShaders = [];
 let fShaders = [];
@@ -72,14 +72,22 @@ function update(delta) {
     // centerZ = camera[2] - 1;
 }
 
-function createTransform(x = 0, y = 0, z = 0, rx = 0, ry = 0, rz = 0, sx = 1, sy = 1, sz = 1, angleX = 0, angleY = 0, angleZ = 0) {
-    let transform = {
-        translate: createTranslateMatrix(x, y, z),
-        rotate: createRotateMatrix(rx, ry, rz, angleX, angleY, angleZ),
-        scale: createScaleMatrix(sx, sy, sz)
-    };
+function loadScene() {
+    // clear gears
+    gears.length = 0;
 
-    return transform;
+    // build the object(s) we'll be drawing, put the data in buffers
+    gears.push(createGear(2,
+        createTransform(),
+        [0, 0, .3]));
+
+    gears.push(createGear(4,
+        createTransform(1.875, 0, 0),
+        [0, 0, -.3]));
+
+    gears.push(createGear(6,
+        createTransform(1.875, -.875, .5, 90, 0, 0, 0.5, 0.5, 0.5),
+        [0, 0, -.45]));
 }
 
 function createIdentityMatrix() {
@@ -94,7 +102,7 @@ function createTranslateMatrix(x, y, z) {
     return mat;
 }
 
-function createRotateMatrix(rx, ry, rz, angleX, angleY, angleZ) {
+function createRotateMatrix(angleX, angleY, angleZ) {
     let xRotate = matrix.create();
     let yRotate = matrix.create();
     let zRotate = matrix.create();
@@ -114,25 +122,17 @@ function createScaleMatrix(sx, sy, sz) {
     return mat;
 }
 
+function createTransform(x = 0, y = 0, z = 0, angleX = 0, angleY = 0, angleZ = 0, sx = 1, sy = 1, sz = 1) {
+    let transform = {
+        translate: createTranslateMatrix(x, y, z),
+        rotate: createRotateMatrix(angleX, angleY, angleZ),
+        scale: createScaleMatrix(sx, sy, sz)
+    };
 
-function loadScene() {
-    // clear gears
-    gears.length = 0;
-
-    // build the object(s) we'll be drawing, put the data in buffers
-    gears.push(createGear(1,
-        createTransform(),
-        createRotateMatrix(0, 0, 1, 0, 0, 1)));
-
-    gears.push(createGear(1,
-        createTransform(1.875, 0, 0),
-        createRotateMatrix(0, 0, 1, 0, 0, -1)));
-
-    // enable attributes
-    enableAttributes();
+    return transform;
 }
 
-function createGear(id, transform = createTransform(), rotation = createRotateMatrix()) {
+function createGear(id, transform = createTransform(), rotation = [0, 0, 0]) {
     return {
         buffer: initBuffers(id),
         transform: transform,
@@ -141,11 +141,16 @@ function createGear(id, transform = createTransform(), rotation = createRotateMa
 }
 
 function drawGear(gear, projection, lookAt, g_xRotate, g_yRotate, g_scale) {
+    bindBuffers(gear);
+
     let o_pvmTransform = matrix.create();
     let o_vmTransform = matrix.create();
 
+    let rotation = gear.rotation;
+    let rotate = createRotateMatrix(timeMultiplier * rotation[0], timeMultiplier * rotation[1], timeMultiplier * rotation[2]);
+
     let transform = gear.transform;
-    matrix.multiplySeries(transform.rotate, transform.rotate, gear.rotation)
+    matrix.multiplySeries(transform.rotate, transform.rotate, rotate);
 
     matrix.multiplySeries(o_pvmTransform, projection, lookAt, g_xRotate, g_yRotate, transform.translate, transform.rotate, g_scale, transform.scale);
     matrix.multiplySeries(o_vmTransform, lookAt, g_xRotate, g_yRotate, transform.translate, transform.rotate, g_scale, transform.scale);
@@ -254,32 +259,28 @@ function init() {
     };
 
     // add an event handler so we can interactively rotate the model
-    document.addEventListener('keydown', function (evenast) {
-        if (event.keyCode == 37) {   //left
-            angle_y -= 3;
-        } else if (event.keyCode == 38) {  //top
-            angle_x -= 3;
-        } else if (event.keyCode == 39) {  //right
-            angle_y += 3;
-        } else if (event.keyCode == 40) {  //bottom
-            angle_x += 3;
-        } else if (event.keyCode == 13 || event.keyCode == 8) {  //enter  or backspace
-            let gear_id_change;
-
-            if (event.keyCode == 13)
-                gear_id_change = 1;
-            else
-                gear_id_change = -1;
-
-            gear_id += gear_id_change;
-
-            if (gear_id < 0)
-                gear_id = 0;
-            if (gear_id > 28)
-                gear_id = 28;
-
-            console.log('Gear ID = ', gear_id);
-            loadScene();
+    document.addEventListener('keydown', function (event) {
+        switch (event.key) {
+            case "ArrowLeft":
+                angle_y -= 3;
+                break;
+            case "ArrowUp":
+                angle_x -= 3;
+                break;
+            case "ArrowRight":
+                angle_y += 3;
+                break;
+            case "ArrowDown":
+                angle_x += 3;
+                break;
+            case "=":
+                timeMultiplier = Math.min(4, timeMultiplier + 0.2)
+                break;
+            case "-":
+                timeMultiplier = Math.max(-4, timeMultiplier - 0.2)
+                break;
+            default:
+                break;
         }
 
         draw();
@@ -531,57 +532,54 @@ function downloadShaders(paths) {
     }
 }
 
-function enableAttributes() {
-    for (let i in gears) {
-        let gear = gears[i];
-        let buffer = gear.buffer;
+function bindBuffers(gear) {
+    let buffer = gear.buffer;
 
-        const numComponents = 3;
-        const type = gl.FLOAT;
-        const normalize = false;
-        const stride = 0;
-        const offset = 0;
+    const numComponents = 3;
+    const type = gl.FLOAT;
+    const normalize = false;
+    const stride = 0;
+    const offset = 0;
 
-        // Tell WebGL how to pull vertex positions from the vertex
-        // buffer. These positions will be fed into the shader program's
-        // "a_vertex" attribute.
+    // Tell WebGL how to pull vertex positions from the vertex
+    // buffer. These positions will be fed into the shader program's
+    // "a_vertex" attribute.
 
-        gl.bindBuffer(gl.ARRAY_BUFFER, buffer.vertex);
-        gl.vertexAttribPointer(
-            programInfo.locations.a_vertex,
-            numComponents,
-            type,
-            normalize,
-            stride,
-            offset);
-        gl.enableVertexAttribArray(
-            programInfo.locations.a_vertex);
+    gl.bindBuffer(gl.ARRAY_BUFFER, buffer.vertex);
+    gl.vertexAttribPointer(
+        programInfo.locations.a_vertex,
+        numComponents,
+        type,
+        normalize,
+        stride,
+        offset);
+    gl.enableVertexAttribArray(
+        programInfo.locations.a_vertex);
 
 
-        // likewise connect the colors buffer to the "a_color" attribute
-        // in the shader program
-        gl.bindBuffer(gl.ARRAY_BUFFER, buffer.color);
-        gl.vertexAttribPointer(
-            programInfo.locations.a_color,
-            numComponents,
-            type,
-            normalize,
-            stride,
-            offset);
-        gl.enableVertexAttribArray(
-            programInfo.locations.a_color);
+    // likewise connect the colors buffer to the "a_color" attribute
+    // in the shader program
+    gl.bindBuffer(gl.ARRAY_BUFFER, buffer.color);
+    gl.vertexAttribPointer(
+        programInfo.locations.a_color,
+        numComponents,
+        type,
+        normalize,
+        stride,
+        offset);
+    gl.enableVertexAttribArray(
+        programInfo.locations.a_color);
 
-        gl.bindBuffer(gl.ARRAY_BUFFER, buffer.normal);
-        gl.vertexAttribPointer(
-            programInfo.locations.a_normal,
-            numComponents,
-            type,
-            normalize,
-            stride,
-            offset);
-        gl.enableVertexAttribArray(
-            programInfo.locations.a_normal);
-    }
+    gl.bindBuffer(gl.ARRAY_BUFFER, buffer.normal);
+    gl.vertexAttribPointer(
+        programInfo.locations.a_normal,
+        numComponents,
+        type,
+        normalize,
+        stride,
+        offset);
+    gl.enableVertexAttribArray(
+        programInfo.locations.a_normal);
 }
 
 //
