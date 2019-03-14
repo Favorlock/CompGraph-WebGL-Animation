@@ -93,8 +93,16 @@ function loadScene() {
         [0, 0, -.45225]));
 
     gears.push(createGear(11,
-        createTransform(-.9, .1, -1.2, 0, 90, 0, 1.25, 1.25, 1.25),
+        createTransform(-.9, -.3, -1.2, 0, 90, 0, 1.25, 1.25, 1.25),
         [0, 0, .225]));
+
+    gears.push(createGear(23,
+        createTransform(0, 0.9, -1.2, 90, 0, 0, 1, 1, 1),
+        [0, 0, -.3]));
+
+    gears.push(createGear(21,
+        createTransform(.9, -.3, -1.3, 0, 90, 0, 1.25, 1.25, 1.25),
+        [0, 0, -.225]));
 }
 
 function createIdentityMatrix() {
