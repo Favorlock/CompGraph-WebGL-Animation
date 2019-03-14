@@ -1,5 +1,6 @@
 let canvas;
 let gl;
+let matrix = new Learn_webgl_matrix();
 
 let angle_x = 0;
 let angle_y = 0;
@@ -10,13 +11,14 @@ let fShaders = [];
 let shaderProgram;
 let programInfo;
 
-let buffers = [];
+let gears = [];
 
 let initialized = false;
 let tick = 0;
 let timeDelta = 0;
 let lastTimeDelta = 0;
-let camera = [0, 0, 0];
+let cameraDefaults = [0, 0, 10];
+let camera = cameraDefaults.slice(0);
 // let controlPoints = [
 //     [-2, -5, -5],
 //     [-0, 0, -2.5],
@@ -35,13 +37,13 @@ let controlPoints = [
     [0.4, 0.4, 5],
     [0.4, 0.4, 2.5],
     [0.4, 0.4, 0],
-    [0.4, 0.4, -2.5]
+    [0.4, 0.4, -5]
 ]
 
 function resetCamera() {
-    camera[0] = 0;
-    camera[1] = 0;
-    camera[2] = 0;
+    camera[0] = cameraDefaults[0];
+    camera[1] = cameraDefaults[1];
+    camera[2] = cameraDefaults[2];
 }
 
 function weight(tick) {
@@ -59,17 +61,105 @@ function update(delta) {
 
     resetCamera();
 
-    for (let i = 0; i < 4; i++) {
-        camera[0] += weights[i] * controlPoints[i][0];
-        camera[1] += weights[i] * controlPoints[i][1];
-        camera[2] += weights[i] * controlPoints[i][2];
-    }
+    // for (let i = 0; i < 4; i++) {
+    //     camera[0] += weights[i] * controlPoints[i][0];
+    //     camera[1] += weights[i] * controlPoints[i][1];
+    //     camera[2] += weights[i] * controlPoints[i][2];
+    // }
 
     // centerX = camera[0];
     // centerY = camera[1];
     // centerZ = camera[2] - 1;
 }
 
+function createTransform(x = 0, y = 0, z = 0, rx = 0, ry = 0, rz = 0, sx = 1, sy = 1, sz = 1, angleX = 0, angleY = 0, angleZ = 0) {
+    let transform = {
+        translate: createTranslateMatrix(x, y, z),
+        rotate: createRotateMatrix(rx, ry, rz, angleX, angleY, angleZ),
+        scale: createScaleMatrix(sx, sy, sz)
+    };
+
+    return transform;
+}
+
+function createIdentityMatrix() {
+    let mat = matrix.create();
+    matrix.setIdentity(mat);
+    return mat;
+}
+
+function createTranslateMatrix(x, y, z) {
+    let mat = createIdentityMatrix();
+    matrix.translate(mat, x, y, z);
+    return mat;
+}
+
+function createRotateMatrix(rx, ry, rz, angleX, angleY, angleZ) {
+    let xRotate = matrix.create();
+    let yRotate = matrix.create();
+    let zRotate = matrix.create();
+
+    matrix.rotate(xRotate, angleX, 1, 0, 0);
+    matrix.rotate(yRotate, angleY, 0, 1, 0);
+    matrix.rotate(zRotate, angleZ, 0, 0, 1);
+
+    matrix.multiplySeries(xRotate, xRotate, yRotate, zRotate);
+
+    return xRotate;
+}
+
+function createScaleMatrix(sx, sy, sz) {
+    let mat = createIdentityMatrix();
+    matrix.scale(mat, sx, sy, sz);
+    return mat;
+}
+
+
+function loadScene() {
+    // clear gears
+    gears.length = 0;
+
+    // build the object(s) we'll be drawing, put the data in buffers
+    gears.push(createGear(1,
+        createTransform(),
+        createRotateMatrix(0, 0, 1, 0, 0, 1)));
+
+    gears.push(createGear(1,
+        createTransform(1.875, 0, 0),
+        createRotateMatrix(0, 0, 1, 0, 0, -1)));
+
+    // enable attributes
+    enableAttributes();
+}
+
+function createGear(id, transform = createTransform(), rotation = createRotateMatrix()) {
+    return {
+        buffer: initBuffers(id),
+        transform: transform,
+        rotation: rotation
+    }
+}
+
+function drawGear(gear, projection, lookAt, g_xRotate, g_yRotate, g_scale) {
+    let o_pvmTransform = matrix.create();
+    let o_vmTransform = matrix.create();
+
+    let transform = gear.transform;
+    matrix.multiplySeries(transform.rotate, transform.rotate, gear.rotation)
+
+    matrix.multiplySeries(o_pvmTransform, projection, lookAt, g_xRotate, g_yRotate, transform.translate, transform.rotate, g_scale, transform.scale);
+    matrix.multiplySeries(o_vmTransform, lookAt, g_xRotate, g_yRotate, transform.translate, transform.rotate, g_scale, transform.scale);
+
+    // gl.uniformMatrix4fv(programInfo.locations.u_PVM_transform, false, pvmTransform);
+    gl.uniformMatrix4fv(programInfo.locations.u_PVM_transform, false, o_pvmTransform);
+    // Set the shader program's uniform
+    gl.uniformMatrix4fv(programInfo.locations.u_VM_transform, false, o_vmTransform);
+
+    { // now tell the shader (GPU program) to draw some triangles
+        const offset = 0;
+        gl.drawArrays(gl.TRIANGLES, offset, gear.buffer.num_vertices);
+    }
+}
 
 //
 // Draw the scene.
@@ -89,7 +179,6 @@ function draw() {
 
     //make transform to implement interactive rotation
 
-    let matrix = new Learn_webgl_matrix();
     let lookAt = matrix.create();
 
     matrix.lookAt(lookAt,
@@ -100,28 +189,11 @@ function draw() {
     let projection = matrix.createFrustum(-.01, .01, -.01, .01, .03, 1000);
     let xRotate = matrix.create();
     let yRotate = matrix.create();
-    let pvmTransform = matrix.create();
-    let vmTransform = matrix.create();
     let scale = matrix.create();
 
     matrix.scale(scale, 0.8, 0.8, 0.8);
     matrix.rotate(xRotate, angle_x, 1, 0, 0);
     matrix.rotate(yRotate, angle_y, 0, 1, 0);
-
-    // Combine the two rotations into a single transformation
-    matrix.multiplySeries(pvmTransform, projection, lookAt,
-            xRotate, yRotate, scale);
-        matrix.multiplySeries(vmTransform, lookAt,
-            xRotate, yRotate, scale);
-
-    // matrix.multiplySeries(pvmTransform, projection, lookAt, scale);
-    // matrix.multiplySeries(vmTransform, lookAt, scale);
-
-    // gl.uniformMatrix4fv(programInfo.locations.u_PVM_transform, false, pvmTransform);
-    gl.uniformMatrix4fv(programInfo.locations.u_PVM_transform, false, pvmTransform);
-    // Set the shader program's uniform
-    gl.uniformMatrix4fv(programInfo.locations.u_VM_transform, false, vmTransform);
-
 
     gl.uniform3f(programInfo.locations.u_light_dir, 1, 1, 1);
 
@@ -129,9 +201,10 @@ function draw() {
     gl.uniform1f(programInfo.locations.u_shininess, 85);
     gl.uniform3f(programInfo.locations.u_ambient_color, 0.2, 0.2, 0.2);
 
-    { // now tell the shader (GPU program) to draw some triangles
-        const offset = 0;
-        gl.drawArrays(gl.TRIANGLES, offset, buffers.num_vertices);
+    for (let i in gears) {
+        let gear = gears[i];
+
+        drawGear(gear, projection, lookAt, xRotate, yRotate, scale);
     }
 }
 
@@ -215,13 +288,6 @@ function init() {
     initialized = true;
 }
 
-function loadScene() {
-    // build the object(s) we'll be drawing, put the data in buffers
-    buffers = initBuffers(gl, programInfo, gear_id);
-
-    enableAttributes();
-}
-
 function loop() {
     let delta = (timeDelta - lastTimeDelta) / 1000;
     tick += 1;
@@ -251,7 +317,7 @@ function main() {
 // Initialize the buffers we'll need. For this demo, we just
 // have one object -- a simple two-dimensional square.
 //
-function initBuffers(gl, programInfo, gear_id) {
+function initBuffers(gear_id) {
     let gearData;
 
     switch (gear_id) {
@@ -466,52 +532,56 @@ function downloadShaders(paths) {
 }
 
 function enableAttributes() {
-    const numComponents = 3;
-    const type = gl.FLOAT;
-    const normalize = false;
-    const stride = 0;
-    const offset = 0;
+    for (let i in gears) {
+        let gear = gears[i];
+        let buffer = gear.buffer;
 
-    // Tell WebGL how to pull vertex positions from the vertex
-    // buffer. These positions will be fed into the shader program's
-    // "a_vertex" attribute.
+        const numComponents = 3;
+        const type = gl.FLOAT;
+        const normalize = false;
+        const stride = 0;
+        const offset = 0;
 
-    gl.bindBuffer(gl.ARRAY_BUFFER, buffers.vertex);
-    gl.vertexAttribPointer(
-        programInfo.locations.a_vertex,
-        numComponents,
-        type,
-        normalize,
-        stride,
-        offset);
-    gl.enableVertexAttribArray(
-        programInfo.locations.a_vertex);
+        // Tell WebGL how to pull vertex positions from the vertex
+        // buffer. These positions will be fed into the shader program's
+        // "a_vertex" attribute.
+
+        gl.bindBuffer(gl.ARRAY_BUFFER, buffer.vertex);
+        gl.vertexAttribPointer(
+            programInfo.locations.a_vertex,
+            numComponents,
+            type,
+            normalize,
+            stride,
+            offset);
+        gl.enableVertexAttribArray(
+            programInfo.locations.a_vertex);
 
 
-    // likewise connect the colors buffer to the "a_color" attribute
-    // in the shader program
-    gl.bindBuffer(gl.ARRAY_BUFFER, buffers.color);
-    gl.vertexAttribPointer(
-        programInfo.locations.a_color,
-        numComponents,
-        type,
-        normalize,
-        stride,
-        offset);
-    gl.enableVertexAttribArray(
-        programInfo.locations.a_color);
+        // likewise connect the colors buffer to the "a_color" attribute
+        // in the shader program
+        gl.bindBuffer(gl.ARRAY_BUFFER, buffer.color);
+        gl.vertexAttribPointer(
+            programInfo.locations.a_color,
+            numComponents,
+            type,
+            normalize,
+            stride,
+            offset);
+        gl.enableVertexAttribArray(
+            programInfo.locations.a_color);
 
-    gl.bindBuffer(gl.ARRAY_BUFFER, buffers.normal);
-    gl.vertexAttribPointer(
-        programInfo.locations.a_normal,
-        numComponents,
-        type,
-        normalize,
-        stride,
-        offset);
-    gl.enableVertexAttribArray(
-        programInfo.locations.a_normal);
-
+        gl.bindBuffer(gl.ARRAY_BUFFER, buffer.normal);
+        gl.vertexAttribPointer(
+            programInfo.locations.a_normal,
+            numComponents,
+            type,
+            normalize,
+            stride,
+            offset);
+        gl.enableVertexAttribArray(
+            programInfo.locations.a_normal);
+    }
 }
 
 //
