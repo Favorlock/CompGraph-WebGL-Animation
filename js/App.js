@@ -13,8 +13,31 @@ let programInfo;
 let buffers = [];
 
 let initialized = false;
+let tick = 0;
 let timeDelta = 0;
 let lastTimeDelta = 0;
+let camera = [0, 0, 0];
+let controlPoints = [
+    [7, 7, 7],
+    [3, 6, 3],
+    [0, 4.5, -3],
+    [-3, 3, -6]
+];
+
+function resetCamera() {
+    camera[0] = 0;
+    camera[1] = 0;
+    camera[2] = 0;
+}
+
+function weight(tick) {
+    return [
+        Math.pow(1 - tick, 3),
+        3 * Math.pow(1 - tick, 2) * tick,
+        3 * (1 - tick) * Math.pow(tick, 2),
+        Math.pow(tick, 3)
+    ]
+}
 
 //
 // Draw the scene.
@@ -32,36 +55,54 @@ function draw() {
 
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
+    tick = tick % 100;
+    let weights = weight(tick / 100);
+
+    resetCamera();
+
+    for (let i = 0; i < 4; i++) {
+        camera[0] += weights[i] * controlPoints[i][0];
+        camera[1] += weights[i] * controlPoints[i][1];
+        camera[2] += weights[i] * controlPoints[i][2];
+    }
 
     //make transform to implement interactive rotation
 
-    var matrix = new Learn_webgl_matrix();
+    let matrix = new Learn_webgl_matrix();
+    let lookAt = matrix.create();
 
-    var rotate_x_matrix = matrix.create();
-    var rotate_y_matrix = matrix.create();
-    var lookat = matrix.create();
-    var u_PVMtransform = matrix.create();
-    var u_VMtransform = matrix.create();
-    var scale = matrix.create();
-    var proj = matrix.createOrthographic(-1, 1, -1, 1, 3, 7);
+    matrix.lookAt(lookAt,
+        camera[0], camera[1], camera[2],
+        0, 0, 0,
+        0, 1, 0);
+
+    let projection = matrix.createFrustum(-1, 1, -1, 1, 3, 1000);
+    let xRotate = matrix.create();
+    let yRotate = matrix.create();
+    let pvmTransform = matrix.create();
+    let vmTransform = matrix.create();
+    let scale = matrix.create();
+
     matrix.scale(scale, 0.8, 0.8, 0.8);
-    matrix.lookAt(lookat, 0, 0, 5, 0, 0, 0, 0, 1, 0);
-    matrix.rotate(rotate_x_matrix, angle_x, 1, 0, 0);
-    matrix.rotate(rotate_y_matrix, angle_y, 0, 1, 0);
+    matrix.rotate(xRotate, angle_x, 1, 0, 0);
+    matrix.rotate(yRotate, angle_y, 0, 1, 0);
 
     // Combine the two rotations into a single transformation
-    matrix.multiplySeries(u_PVMtransform, proj, lookat,
-        rotate_x_matrix, rotate_y_matrix, scale);
-    matrix.multiplySeries(u_VMtransform, lookat,
-        rotate_x_matrix, rotate_y_matrix, scale);
+    matrix.multiplySeries(pvmTransform, projection, lookAt,
+            xRotate, yRotate, scale);
+        matrix.multiplySeries(vmTransform, lookAt,
+            xRotate, yRotate, scale);
 
+    // matrix.multiplySeries(pvmTransform, projection, lookAt, scale);
+    // matrix.multiplySeries(vmTransform, lookAt, scale);
 
+    // gl.uniformMatrix4fv(programInfo.locations.u_PVM_transform, false, pvmTransform);
+    gl.uniformMatrix4fv(programInfo.locations.u_PVM_transform, false, pvmTransform);
     // Set the shader program's uniform
-    gl.uniformMatrix4fv(programInfo.locations.u_VM_transform, false, u_VMtransform);
-    gl.uniformMatrix4fv(programInfo.locations.u_PVM_transform, false, u_PVMtransform);
+    gl.uniformMatrix4fv(programInfo.locations.u_VM_transform, false, vmTransform);
 
 
-    gl.uniform3f(programInfo.locations.u_light_dir, 3, 3, 3);
+    gl.uniform3f(programInfo.locations.u_light_dir, 1, 1, 1);
 
     gl.uniform3f(programInfo.locations.u_light_color, 1.0, 1.0, 1.0);
     gl.uniform1f(programInfo.locations.u_shininess, 85);
@@ -161,12 +202,13 @@ function loadScene() {
 }
 
 function update(delta) {
-    let inc = 90 * delta;
-    angle_y = (angle_y + inc) % 360;
+    // let inc = 90 * delta;
+    // angle_y = (angle_y + inc) % 360;
 }
 
 function loop() {
     let delta = (timeDelta - lastTimeDelta) / 1000;
+    tick += 1;
 
     update(delta);
     draw();
