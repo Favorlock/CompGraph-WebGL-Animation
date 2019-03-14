@@ -295,6 +295,9 @@ function drawGear(gear, projection, lookAt, g_xRotate, g_yRotate, g_scale) {
 // Draw the scene.
 //
 function draw() {
+    let hAspect = canvas.height / canvas.width;
+    let wAspect = canvas.width / canvas.height;
+
     webglUtils.resizeCanvasToDisplaySize(canvas);
 
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
@@ -321,7 +324,14 @@ function draw() {
         lookAtModifier = null;
     }
 
-    let projection = matrix.createFrustum(-.01, .01, -.01, .01, .03, 1000);
+    let left = wAspect < hAspect ? -wAspect / 100 : -.01;
+    let right = wAspect < hAspect ? wAspect / 100: .01;
+    let top = wAspect > hAspect ? hAspect / 100 : .01;
+    let bottom = wAspect > hAspect ? -hAspect / 100 : -.01;
+    let near = (3 * (hAspect < wAspect ? hAspect : wAspect)) / 100;
+
+    let projection = matrix.createFrustum(left, right, bottom, top, near, 1000);
+    // let projection = matrix.createFrustum(-.01, .01, -.01, .01, .03, 1000);
     let xRotate = matrix.create();
     let yRotate = matrix.create();
     let scale = matrix.create();

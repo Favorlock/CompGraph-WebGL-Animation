@@ -4,6 +4,7 @@ body {
 
 canvas {
 	height: 100vh;
+	width: 100vw;
 	background-color: white;
 	display: block;
 	margin: 0 auto;
