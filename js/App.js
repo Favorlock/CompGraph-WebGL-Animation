@@ -1,3 +1,6 @@
+import Engine from './engine/core/Engine.js';
+
+let engine;
 let canvas;
 let gl;
 let matrix = new Learn_webgl_matrix();
@@ -17,17 +20,8 @@ let programInfo;
 let gears = [];
 
 let initialized = false;
-let tick = 0;
-let timeDelta = 0;
-let lastTimeDelta = 0;
-let cameraDefaults = [0, 0, 10];
+let cameraDefaults = [0, 0, 0];
 let camera = cameraDefaults.slice(0);
-// let controlPoints = [
-//     [-2, -5, -5],
-//     [-0, 0, -2.5],
-//     [1, 5, 4],
-//     [3, 0, 10]
-// ];
 
 let centerX = 0;
 let centerY = 0;
@@ -37,11 +31,38 @@ let upDY = 1;
 let upDZ = 0;
 
 let controlPoints = [
-    [0.4, 0.4, 5],
-    [0.4, 0.4, 2.5],
-    [0.4, 0.4, 0],
-    [0.4, 0.4, -5]
+    [0.4, 0.4, 10],
+    [0.4, 0.4, -10],
+    [0.4, 0.4, -3],
+    [0.4, 1, -10]
 ]
+
+let paths = {
+    1: {
+        controlPoints: [
+            [0.5, 0.4, 5],
+            [0.5, 0.4, 2],
+            [0.5, 0.4, 1],
+            [0.5, 0.4, 0]
+        ],
+        center: {
+            mode: 'look-forward',
+            amount: 20
+        },
+        ticks: Math.floor(100)
+    }
+}
+let currentPath;
+let animationLength = 0;
+
+for (let prop in paths) {
+    animationLength += paths[prop].ticks;
+}
+
+function resetLookAt() {
+    resetCamera();
+    resetCenter();
+}
 
 function resetCamera() {
     camera[0] = cameraDefaults[0];
@@ -49,30 +70,52 @@ function resetCamera() {
     camera[2] = cameraDefaults[2];
 }
 
+function resetCenter() {
+    centerX = 0;
+    centerY = 0;
+    centerZ = 0;
+}
+
 function weight(tick) {
+    let t = tick / 4;
+
     return [
-        Math.pow(1 - tick, 3),
-        3 * Math.pow(1 - tick, 2) * tick,
-        3 * (1 - tick) * Math.pow(tick, 2),
-        Math.pow(tick, 3)
+        Math.pow(1 - t, 3),
+        3 * Math.pow(1 - t, 2) * t,
+        3 * (1 - t) * Math.pow(t, 2),
+        Math.pow(t, 3)
     ]
 }
 
-function update(delta) {
-    tick = tick % 100;
-    let weights = weight(tick / 100);
+function update(delta, ticks) {
+    let tick = engine.tickHandler.steps % animationLength;
 
-    // resetCamera();
+    if (paths[tick]) {
+        currentPath = paths[tick];
+    }
 
-    // for (let i = 0; i < 4; i++) {
-    //     camera[0] += weights[i] * controlPoints[i][0];
-    //     camera[1] += weights[i] * controlPoints[i][1];
-    //     camera[2] += weights[i] * controlPoints[i][2];
-    // }
+    let weights = weight(tick / currentPath.ticks);
 
-    // centerX = camera[0];
-    // centerY = camera[1];
-    // centerZ = camera[2] - 1;
+    resetLookAt();
+
+    for (let i = 0; i < controlPoints.length; i++) {
+        camera[0] += weights[i] * controlPoints[i][0];
+        camera[1] += weights[i] * controlPoints[i][1];
+        camera[2] += weights[i] * controlPoints[i][2];
+
+        if (currentPath.center.mode === 'look-forward') {
+            let weights2 = weight(Math.min(tick + 20, currentPath.ticks) / currentPath.ticks);
+
+            centerX += weights2[i] * controlPoints[i][0];
+            centerY += weights2[i] * controlPoints[i][1];
+            centerZ += weights2[i] * controlPoints[i][2];
+        } else {
+        }
+
+        console.log(camera)
+    }
+
+
 }
 
 function loadScene() {
@@ -229,19 +272,16 @@ function draw() {
 }
 
 function init() {
-    canvas = document.querySelector('#glcanvas');
-    gl = canvas.getContext('webgl', {antialias: true});
-
-    downloadShaders([
-        './shaders/Global.vert',
-        './shaders/Global.frag'
-    ]);
-
     // If we don't have a GL context, give up now
     if (!gl) {
         alert('Unable to initialize WebGL. Your browser or machine may not support it.');
         return;
     }
+
+    downloadShaders([
+        './shaders/Global.vert',
+        './shaders/Global.frag'
+    ]);
 
     // Vertex shader program, runs on GPU, once per vertex
 
@@ -322,27 +362,9 @@ function init() {
     initialized = true;
 }
 
-function loop() {
-    let delta = (timeDelta - lastTimeDelta) / 1000;
-    tick += 1;
-
-    update(delta);
+function loop(delta, ticks) {
+    update(delta, ticks);
     draw();
-}
-
-function main() {
-    init();
-
-    if (!initialized) return;
-
-    loadScene();
-
-    window.requestAnimationFrame(function callback(time) {
-        timeDelta = time;
-        loop();
-        window.requestAnimationFrame(callback);
-        lastTimeDelta = timeDelta;
-    });
 }
 
 //
@@ -661,4 +683,18 @@ function loadShader(gl, type, source) {
     return shader;
 }
 
-main();
+window.onload = function () {
+    engine = new Engine(loop);
+    engine.init();
+
+    canvas = engine.canvas;
+    gl = engine.ctx;
+
+    init();
+
+    if (!initialized) return;
+
+    loadScene();
+
+    engine.start();
+};
