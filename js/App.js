@@ -189,6 +189,8 @@ function loadScene() {
     // clear gears
     gears.length = 0;
 
+    gears.push(createPlaneWrapper());
+
     // build the object(s) we'll be drawing, put the data in buffers
     gears.push(createGear(2,
         createTransform(),
@@ -260,6 +262,14 @@ function createTransform(x = 0, y = 0, z = 0, angleX = 0, angleY = 0, angleZ = 0
 function createGear(id, transform = createTransform(), rotation = [0, 0, 0]) {
     return {
         buffer: initBuffers(id),
+        transform: transform,
+        rotation: rotation
+    }
+}
+
+function createPlaneWrapper(transform = createTransform(), rotation = [0, 0, 0]) {
+    return {
+        buffer: createPlane(),
         transform: transform,
         rotation: rotation
     }
@@ -442,6 +452,61 @@ function init() {
     });
 
     initialized = true;
+}
+
+function createPlane() {
+    const vertices = []
+    const colors = []
+    const normals = []
+
+    for (let r = -20; r < 20; r++) {
+        for (let c = -20; c < 20; c++) {
+            vertices.push( r,-3,c,  r+1,-3,c, r,-3,c+1);
+            colors.push(.5,.5,.5, .5,.5,.5, .5,.5,.5);
+            normals.push(0,1,0, 0,1,0, 0,1,0);
+        }
+    }
+
+    // Create  buffers for the object's vertex positions
+    const vertexBuffer = gl.createBuffer();
+
+    // Select the positionBuffer as the one to apply buffer
+    // operations to from here out.
+    gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+
+    // Now pass the list of vertices to the GPU to build the
+    // shape. We do this by creating a Float32Array from the
+    // JavaScript array, then use it to fill the current buffer.
+    gl.bufferData(gl.ARRAY_BUFFER,
+        new Float32Array(vertices),
+        gl.STATIC_DRAW);
+
+
+    // do likewise for colors
+    const colorBuffer = gl.createBuffer();
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
+
+    gl.bufferData(gl.ARRAY_BUFFER,
+        new Float32Array(colors),
+        gl.STATIC_DRAW);
+
+
+    const normalBuffer = gl.createBuffer();
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, normalBuffer);
+
+    gl.bufferData(gl.ARRAY_BUFFER,
+        new Float32Array(normals),
+        gl.STATIC_DRAW);
+
+    return {
+        // each vertex in buffer has 3 floats
+        num_vertices: vertices.length / 3,
+        vertex: vertexBuffer,
+        color: colorBuffer,
+        normal: normalBuffer
+    };
 }
 
 function loop(delta, ticks) {
