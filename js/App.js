@@ -18,10 +18,10 @@ let timeDelta = 0;
 let lastTimeDelta = 0;
 let camera = [0, 0, 0];
 let controlPoints = [
-    [7, 7, 7],
-    [3, 6, 3],
-    [0, 4.5, -3],
-    [-3, 3, -6]
+    [-2, -5, -5],
+    [-0, 0, -2.5],
+    [1, 5, 4],
+    [3, 0, 10]
 ];
 
 function resetCamera() {
@@ -39,6 +39,20 @@ function weight(tick) {
     ]
 }
 
+function update(delta) {
+    tick = tick % 100;
+    let weights = weight(tick / 100);
+
+    resetCamera();
+
+    for (let i = 0; i < 4; i++) {
+        camera[0] += weights[i] * controlPoints[i][0];
+        camera[1] += weights[i] * controlPoints[i][1];
+        camera[2] += weights[i] * controlPoints[i][2];
+    }
+}
+
+
 //
 // Draw the scene.
 //
@@ -55,17 +69,6 @@ function draw() {
 
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-    tick = tick % 100;
-    let weights = weight(tick / 100);
-
-    resetCamera();
-
-    for (let i = 0; i < 4; i++) {
-        camera[0] += weights[i] * controlPoints[i][0];
-        camera[1] += weights[i] * controlPoints[i][1];
-        camera[2] += weights[i] * controlPoints[i][2];
-    }
-
     //make transform to implement interactive rotation
 
     let matrix = new Learn_webgl_matrix();
@@ -76,7 +79,7 @@ function draw() {
         0, 0, 0,
         0, 1, 0);
 
-    let projection = matrix.createFrustum(-1, 1, -1, 1, 3, 1000);
+    let projection = matrix.createFrustum(-.01, .01, -.01, .01, .03, 1000);
     let xRotate = matrix.create();
     let yRotate = matrix.create();
     let pvmTransform = matrix.create();
@@ -199,11 +202,6 @@ function loadScene() {
     buffers = initBuffers(gl, programInfo, gear_id);
 
     enableAttributes();
-}
-
-function update(delta) {
-    // let inc = 90 * delta;
-    // angle_y = (angle_y + inc) % 360;
 }
 
 function loop() {
