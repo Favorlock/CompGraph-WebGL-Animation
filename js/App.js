@@ -485,12 +485,22 @@ function createPlane() {
 }
 
 function loop(delta, ticks) {
-    if (alpha > 0) {
+    if ((engine.tickHandler.steps % animationLength) <= fade_time * 60) {
         let inc = 1 / (fade_time * 60);
         fade_ctx.clearRect(0, 0, fade.width, fade.height);
         fade_ctx.globalAlpha = alpha;
         fade_ctx.fillRect(0, 0, fade.width, fade.height);
-        alpha -= inc;
+        alpha = Math.max(alpha - inc, 0);
+    }
+
+    if ((engine.tickHandler.steps % animationLength) > animationLength - fade_time * 60) {
+        if (alpha < 100) {
+            let inc = 1 / (fade_time * 60);
+            alpha = Math.min(alpha + inc, 1);
+            fade_ctx.clearRect(0, 0, fade.width, fade.height);
+            fade_ctx.globalAlpha = alpha;
+            fade_ctx.fillRect(0, 0, fade.width, fade.height);
+        }
     }
 
     update(delta, ticks);
