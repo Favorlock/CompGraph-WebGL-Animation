@@ -2,6 +2,9 @@ import Engine from './engine/core/Engine.js';
 
 let engine;
 let canvas;
+let fade;
+let fade_ctx;
+let fade_time = 4;
 let gl;
 let matrix = new Learn_webgl_matrix();
 
@@ -29,6 +32,8 @@ let centerZ = 0;
 let upDX = 0;
 let upDY = 1;
 let upDZ = 0;
+
+let alpha = 1;
 
 let lookAhead = {
     mode: 'look-forward',
@@ -510,6 +515,14 @@ function createPlane() {
 }
 
 function loop(delta, ticks) {
+    if (alpha > 0) {
+        let inc = 1 / (fade_time * 60);
+        fade_ctx.clearRect(0, 0, fade.width, fade.height);
+        fade_ctx.globalAlpha = alpha;
+        fade_ctx.fillRect(0, 0, fade.width, fade.height);
+        alpha -= inc;
+    }
+
     update(delta, ticks);
     draw();
 }
@@ -835,6 +848,8 @@ window.onload = function () {
     engine.init();
 
     canvas = engine.canvas;
+    fade = document.getElementById('fade');
+    fade_ctx = fade.getContext('2d');
     gl = engine.ctx;
 
     init();
