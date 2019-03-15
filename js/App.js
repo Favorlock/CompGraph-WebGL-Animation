@@ -313,7 +313,7 @@ function draw() {
     let hAspect = canvas.height / canvas.width;
     let wAspect = canvas.width / canvas.height;
 
-    webglUtils.resizeCanvasToDisplaySize(canvas);
+    resizeCanvasToDisplaySize(canvas);
 
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
     gl.clearColor(1.0, 1.0, 1.0, 1.0);  // Clear to white, fully opaque
@@ -413,40 +413,10 @@ function init() {
     // add an event handler so we can interactively rotate the model
     document.addEventListener('keydown', function (event) {
         switch (event.key) {
-            case "ArrowLeft":
-                angle_y -= 3;
-                break;
-            case "ArrowUp":
-                angle_x -= 3;
-                break;
-            case "ArrowRight":
-                angle_y += 3;
-                break;
-            case "ArrowDown":
-                angle_x += 3;
-                break;
-            case "a":
-                camera[0] -= .2;
-                break;
-            case "w":
-                camera[1] += .2
-                break;
-            case "d":
-                camera[0] += .2;
-                break;
-            case "s":
-                camera[1] -= .2;
-                break;
-            case "PageUp":
-                camera[2] -= .2;
-                break;
-            case "PageDown":
-                camera[2] += .2;
-                break;
-            case "=":
+            case "f":
                 timeMultiplier = Math.min(4, timeMultiplier + 0.2);
                 break;
-            case "-":
+            case "s":
                 timeMultiplier = Math.max(-4, timeMultiplier - 0.2);
                 break;
             default:
@@ -841,6 +811,18 @@ function loadShader(gl, type, source) {
     }
 
     return shader;
+}
+
+function resizeCanvasToDisplaySize(canvas, multiplier) {
+    multiplier = multiplier || 1;
+    var width  = canvas.clientWidth  * multiplier | 0;
+    var height = canvas.clientHeight * multiplier | 0;
+    if (canvas.width !== width ||  canvas.height !== height) {
+        canvas.width  = width;
+        canvas.height = height;
+        return true;
+    }
+    return false;
 }
 
 window.onload = function () {
